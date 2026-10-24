@@ -1,0 +1,2 @@
+experiment,algorithm,features,training_rows,validation_rows,accuracy,precision,recall,f1_score,roc_auc,training_time_seconds,rounds_completed,best_round,best_validation_logloss
+Experiment 3 - 5000-round limit,XGBoost,28,700000,150000,0.7507333333333334,0.7582129100321401,0.7775764895330113,0.7677726295914438,0.832905140047855,32.50296199996956,3634,3534,0.4994283244526437

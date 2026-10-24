@@ -1,0 +1,30 @@
+
+# Python environments
+.venv/
+venv/
+**/.venv/
+__pycache__/
+*.py[cod]
+
+# Original and generated datasets
+HIGGS.csv
+higgs_development_1m.csv
+higgs_train_700k.csv
+higgs_validation_150k.csv
+higgs_test_150k.csv
+higgs_train_full.csv
+higgs_validation_full.csv
+higgs_test_full.csv
+
+# Secrets
+.env
+.env.*
+
+# PyTorch checkpoints
+*.pt
+*.pth
+
+# Other large model artifacts
+*.ubj
+*.pkl
+*.joblib

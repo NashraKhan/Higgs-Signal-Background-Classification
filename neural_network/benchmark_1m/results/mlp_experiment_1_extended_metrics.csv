@@ -1,0 +1,2 @@
+experiment,model,features,best_epoch,training_time_seconds,validation_loss,accuracy,precision,recall,f1_score,roc_auc
+experiment_1,PyTorch MLP,21,30,128.95,0.580369,0.6925333333333333,0.6933300887621962,0.7527299718196457,0.7218100442739435,0.7596537119923706

@@ -1,0 +1,2 @@
+experiment,algorithm,features,training_rows,validation_rows,accuracy,precision,recall,f1_score,roc_auc,training_time_seconds,best_iteration,best_validation_logloss
+Experiment 3,XGBoost,28,700000,150000,0.7406533333333334,0.7503824893890041,0.7651091988727858,0.7576742911247322,0.8220108256747198,5.09591899998486,499,0.5141201017727214
