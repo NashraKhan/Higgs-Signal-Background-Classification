@@ -1,0 +1,12 @@
+{
+    "accuracy": 0.6410866666666667,
+    "precision": 0.6384310677935002,
+    "recall": 0.7441374798711755,
+    "f1_score": 0.6872433003944532,
+    "roc_auc": 0.6835079667362041,
+    "training_rows": 700000,
+    "validation_rows": 150000,
+    "feature_count": 28,
+    "training_seconds": 0.56,
+    "scikit_learn_version": "1.9.1"
+}
