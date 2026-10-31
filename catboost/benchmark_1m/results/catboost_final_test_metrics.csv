@@ -1,0 +1,2 @@
+selected_model,number_of_features,test_rows,accuracy,precision,recall,f1_score,roc_auc,log_loss,prediction_time_seconds,threshold
+catboost_experiment_3_28_features.cbm,28,150000,0.74942,0.7575448387770908,0.7752616747181964,0.7663008673485249,0.8321105892109888,0.5010035919052173,0.024165500013623387,0.5

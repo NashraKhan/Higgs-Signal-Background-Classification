@@ -1,0 +1,2 @@
+experiment,number_of_features,validation_rows,accuracy,precision,recall,f1_score,roc_auc,log_loss,training_time_seconds,best_iteration_zero_based,best_validation_logloss,random_seed,iterations_configured,depth,learning_rate,early_stopping_rounds,thread_count
+Experiment 2 - 7 features,7,150000,0.7129866666666667,0.7222303544853498,0.7448545692431562,0.7333680155574548,0.7915891713918248,0.5462157220399603,53.61629299999913,1499,0.5462157220399599,42,1500,8,0.05,100,23
