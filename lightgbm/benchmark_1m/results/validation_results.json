@@ -1,0 +1,29 @@
+[
+    {
+        "experiment": "low_level",
+        "features": 21,
+        "best_iteration": 1999,
+        "validation_auc": 0.7399772901573474,
+        "validation_accuracy": 0.6757066666666667,
+        "training_seconds": 20.62,
+        "model_path": "models\\lightgbm_low_level.txt"
+    },
+    {
+        "experiment": "derived",
+        "features": 7,
+        "best_iteration": 1722,
+        "validation_auc": 0.7903202981781381,
+        "validation_accuracy": 0.71176,
+        "training_seconds": 14.44,
+        "model_path": "models\\lightgbm_derived.txt"
+    },
+    {
+        "experiment": "all_features",
+        "features": 28,
+        "best_iteration": 2000,
+        "validation_auc": 0.8275907677184812,
+        "validation_accuracy": 0.7455,
+        "training_seconds": 19.9,
+        "model_path": "models\\lightgbm_all_features.txt"
+    }
+]

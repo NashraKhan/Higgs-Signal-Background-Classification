@@ -28,3 +28,4 @@ higgs_test_full.csv
 *.ubj
 *.pkl
 *.joblib
+lightgbm/benchmark_1m/data/
