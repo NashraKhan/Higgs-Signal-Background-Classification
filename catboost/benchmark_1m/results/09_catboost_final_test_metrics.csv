@@ -1,0 +1,4 @@
+Model_File,Experiment,Test_Accuracy,Test_ROC_AUC,CI_95_Low,CI_95_High,Chosen_Threshold,Test_Significance_Proxy,Test_Signal_S,Test_Background_B
+catboost_experiment_1_21_21_features.cbm,Experiment 1 (21 Raw Features),0.6886,0.7549,0.7525,0.7573,0.56,368.48,50611,18865
+catboost_experiment_2_7_7_features.cbm,Experiment 2 (7 Physics Features),0.7121,0.7911,0.789,0.7935,0.89,416.48,11706,790
+catboost_experiment_3_28_features.cbm,Experiment 3 (All 28 Features),0.7494,0.8321,0.83,0.8342,0.89,536.39,15803,868

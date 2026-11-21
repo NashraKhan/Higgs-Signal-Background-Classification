@@ -1,0 +1,4 @@
+experiment,features,best_epoch,train_time_sec,test_accuracy,test_precision,test_recall,test_f1,test_roc_auc,ci_95_low,ci_95_high,optimal_val_threshold,test_significance_proxy,test_signal_S,test_background_B
+experiment_1,21,58,340.94,0.6986,0.7031,0.7466,0.7242,0.7676,0.7653,0.7698,0.59,381.83,48499,16133
+experiment_2,7,59,329.69,0.7112,0.7197,0.7453,0.7323,0.7911,0.7889,0.7934,0.89,449.27,12483,772
+experiment_3,28,59,367.44,0.7521,0.7581,0.7815,0.7696,0.836,0.834,0.8381,0.84,553.31,24377,1941
