@@ -53,6 +53,7 @@ def model_available(name: str) -> bool:
 
 
 def model_status() -> list[dict]:
+    """Report models that actually load, not merely artifacts that exist."""
     labels = {
         "xgboost": "XGBoost · 5,000 rounds",
         "catboost": "CatBoost",
@@ -60,7 +61,20 @@ def model_status() -> list[dict]:
         "logistic_regression": "Logistic Regression",
         "mlp": "Neural Network (MLP)",
     }
-    return [{"id": n, "name": labels[n], "available": model_available(n), "artifact": str(MODEL_PATHS[n].relative_to(ROOT))} for n in MODEL_PATHS]
+    statuses = []
+    for name, label in labels.items():
+        if not model_available(name):
+            missing = str(MODEL_PATHS[name].relative_to(ROOT))
+            if name == "mlp" and not MLP_SCALER.is_file():
+                missing += " + " + str(MLP_SCALER.relative_to(ROOT))
+            statuses.append({"id": name, "name": label, "available": False, "ready": False, "error": "Required model artifact missing: " + missing})
+            continue
+        try:
+            load_model(name)
+            statuses.append({"id": name, "name": label, "available": True, "ready": True, "error": None})
+        except Exception as exc:
+            statuses.append({"id": name, "name": label, "available": True, "ready": False, "error": str(exc)})
+    return statuses
 
 
 @lru_cache(maxsize=5)
@@ -272,7 +286,9 @@ def predict(request: PredictionRequest):
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="Inference failed: " + str(exc)) from exc
+        # Model deserialization / dependency incompatibility is an unavailable
+        # inference service for this model, not a successful API connection.
+        raise HTTPException(status_code=503, detail="Model is not ready for inference: " + str(exc)) from exc
     label = int(probability >= request.threshold)
     return {
         "model": request.model, "prediction": label,
