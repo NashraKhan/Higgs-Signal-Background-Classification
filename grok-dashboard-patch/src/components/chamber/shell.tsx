@@ -54,12 +54,19 @@ export function Chamber() {
       })
       .then((data) => {
         const models = Array.isArray(data.models) ? data.models : [];
-        const ready = models.filter((item: { id: string; ready?: boolean }) => item.ready === true).map((item: { id: string }) => item.id);
+        const hasReadinessInfo = models.some((item: { ready?: boolean }) => typeof item.ready === "boolean");
+        const ready = hasReadinessInfo
+          ? models.filter((item: { id: string; ready?: boolean }) => item.ready === true).map((item: { id: string }) => item.id)
+          : [];
         setReadyModels(ready);
         setApiReady(true);
-        const current = models.find((item: { id: string }) => item.id === selectedModel);
-        if (current && !current.ready) setApiError(current.error || (current.id + " is not ready for inference."));
-        else setApiError("");
+        if (!hasReadinessInfo) {
+          setApiError("Backend update needed: the running API is an older version. Restart it to check which model files load correctly.");
+        } else {
+          const current = models.find((item: { id: string }) => item.id === selectedModel);
+          if (current && !current.ready) setApiError(current.error || (current.id + " could not be loaded for inference."));
+          else setApiError("");
+        }
       })
       .catch(() => {
         setApiReady(false);
@@ -122,7 +129,7 @@ export function Chamber() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <span className={apiReady ? "text-xs text-ion" : "text-xs text-copper"}>
-              {apiReady ? "● API ONLINE · " + readyModels.length + "/5 MODELS READY" : "● API NOT CONNECTED"}
+              {apiReady ? (readyModels.length > 0 ? "● API ONLINE · " + readyModels.length + "/5 MODELS READY" : "● API ONLINE · READINESS NOT CHECKED") : "● API NOT CONNECTED"}
             </span>
             <label className="text-xs text-mist">
               Model{" "}
@@ -144,37 +151,50 @@ export function Chamber() {
           {showGuide ? <Explainer /> : null}
           {!showGuide && stage === "hall" ? <div aria-hidden="true" className="h-[62vh] min-h-[380px]" /> : null}
           {!showGuide && lastPrediction && stage === "hall" ? (
-            <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
-              <p className="kicker text-xs text-ion">
-                Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : lastPrediction.sample_type === "source_dataset_demo" ? "source-dataset demo event" : "synthetic demonstration event"} #{lastPrediction.index.toLocaleString()}
-              </p>
-              <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-                <div>
-                  <p className="display text-4xl text-cream">{lastPrediction.class_name.toUpperCase()}</p>
-                  <p className="mt-1 text-xs text-mist">{selectedLabel} · 28 input features</p>
-                </div>
-                <div className="text-right">
-                  <p className="num text-3xl text-cream">{(lastPrediction.confidence * 100).toFixed(2)}%</p>
-                  <p className="text-xs text-mist">Confidence in predicted class</p>
+            lastPrediction.sample_type === "synthetic_demo" ? (
+              <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-copper/30 bg-void/90 p-4 backdrop-blur md:mx-12">
+                <p className="kicker text-xs text-copper">SYNTHETIC INPUT · NOT A RECORDED HIGGS EVENT</p>
+                <p className="mt-2 text-sm font-semibold text-cream">Inference pipeline demonstration only</p>
+                <p className="mt-1 text-xs leading-5 text-mist">The API generated 28 numbers within the saved feature ranges and passed them to {selectedLabel}. This confirms the request path only; it does not establish a real collision classification, model accuracy, or a ground-truth label.</p>
+                <div className="mt-3 rounded-xl border border-line bg-white/[0.03] p-3">
+                  <p className="kicker text-[9px] text-ion">RECORDED VALIDATION RESULT</p>
+                  <p className="mt-1 text-sm text-cream">MLP baseline · 75.53% accuracy · 0.8375 ROC-AUC</p>
+                  <p className="mt-1 text-[10px] text-mist">28 features · 150,000 validation rows · saved experiment metrics, not this generated input</p>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <p className="text-mist">P(Signal) <strong className="ml-2 text-cream">{(lastPrediction.p_signal * 100).toFixed(2)}%</strong></p>
-                <p className="text-mist">P(Background) <strong className="ml-2 text-cream">{((1 - lastPrediction.p_signal) * 100).toFixed(2)}%</strong></p>
-              </div>
-              {lastPrediction.actual_label !== null ? (
-                <p className="mt-3 text-sm text-mist">
-                  {lastPrediction.sample_type === "held_out_test" ? "Actual held-out label:" : "Source dataset label (not held-out):"} <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
-                  {" · "}
-                  <strong className={lastPrediction.actual_label === lastPrediction.prediction ? "text-ion" : "text-copper"}>
-                    {lastPrediction.actual_label === lastPrediction.prediction ? "Correct prediction" : "Different from actual label"}
-                  </strong>
+            ) : (
+              <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
+                <p className="kicker text-xs text-ion">
+                  {lastPrediction.sample_type === "held_out_test" ? "MODEL INFERENCE · HELD-OUT TEST EVENT" : "MODEL INFERENCE · SOURCE-DATASET DEMO EVENT"} #{lastPrediction.index.toLocaleString()}
                 </p>
-              ) : (
-                <p className="mt-3 text-xs text-mist">No ground-truth label was present in the local sample file.</p>
-              )}
-              <p className="mt-2 break-all text-[11px] text-mist/70">Source: {lastPrediction.source}</p>
-            </div>
+                <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <p className="display text-4xl text-cream">{lastPrediction.class_name.toUpperCase()}</p>
+                    <p className="mt-1 text-xs text-mist">{selectedLabel} · 28 input features</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="num text-3xl text-cream">{(lastPrediction.confidence * 100).toFixed(2)}%</p>
+                    <p className="text-xs text-mist">Model probability for predicted class</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <p className="text-mist">P(Signal) <strong className="ml-2 text-cream">{(lastPrediction.p_signal * 100).toFixed(2)}%</strong></p>
+                  <p className="text-mist">P(Background) <strong className="ml-2 text-cream">{((1 - lastPrediction.p_signal) * 100).toFixed(2)}%</strong></p>
+                </div>
+                {lastPrediction.actual_label !== null ? (
+                  <p className="mt-3 text-sm text-mist">
+                    {lastPrediction.sample_type === "held_out_test" ? "Actual held-out label:" : "Source dataset label (not held-out):"} <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
+                    {" · "}
+                    <strong className={lastPrediction.actual_label === lastPrediction.prediction ? "text-ion" : "text-copper"}>
+                      {lastPrediction.actual_label === lastPrediction.prediction ? "Matches provided label" : "Differs from provided label"}
+                    </strong>
+                  </p>
+                ) : (
+                  <p className="mt-3 text-xs text-mist">No ground-truth label was provided for this event.</p>
+                )}
+                <p className="mt-2 text-[11px] text-mist/70">Event source: {lastPrediction.sample_type === "held_out_test" ? "Local held-out test split" : "Local HIGGS source dataset (not held-out)"}</p>
+              </div>
+            )
           ) : null}
           {!showGuide && stage !== "hall" ? (
             <>
