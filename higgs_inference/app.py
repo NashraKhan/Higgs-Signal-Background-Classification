@@ -8,7 +8,6 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
-import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -18,11 +17,8 @@ FEATURES = [f"feature_{i}" for i in range(1, 29)]
 MODEL_PATHS = {
     "xgboost": ROOT / "xgboost/benchmark_1m/models/experiment_3_xgboost_28_features_5000_rounds.json",
     "catboost": ROOT / "catboost/benchmark_1m/models/catboost_experiment_3_28_features.cbm",
-    "lightgbm": ROOT / "lightgbm/benchmark_1m/models/lightgbm_all_features.txt",
     "logistic_regression": ROOT / "logistic_regression/benchmark_1m/models/higgs_logistic_regression.joblib",
-    "mlp": ROOT / "neural_network/benchmark_1m/models/mlp_experiment_3.pt",
 }
-MLP_SCALER = ROOT / "neural_network/benchmark_1m/models/mlp_experiment_3_scaler.npz"
 
 app = FastAPI(title="HIGGS Local Inference API", version="1.0.0")
 app.add_middleware(
@@ -34,22 +30,8 @@ app.add_middleware(
 )
 
 
-class HiggsMLP(torch.nn.Module):
-    def __init__(self, input_features: int = 28):
-        super().__init__()
-        self.network = torch.nn.Sequential(
-            torch.nn.Linear(input_features, 128), torch.nn.ReLU(), torch.nn.Dropout(0.2),
-            torch.nn.Linear(128, 64), torch.nn.ReLU(), torch.nn.Dropout(0.2),
-            torch.nn.Linear(64, 32), torch.nn.ReLU(), torch.nn.Linear(32, 1),
-        )
-
-    def forward(self, x):
-        return self.network(x).squeeze(1)
-
-
 def model_available(name: str) -> bool:
-    path = MODEL_PATHS[name]
-    return path.is_file() and (name != "mlp" or MLP_SCALER.is_file())
+    return name in MODEL_PATHS and MODEL_PATHS[name].is_file()
 
 
 def model_status() -> list[dict]:
@@ -57,16 +39,12 @@ def model_status() -> list[dict]:
     labels = {
         "xgboost": "XGBoost · 5,000 rounds",
         "catboost": "CatBoost",
-        "lightgbm": "LightGBM",
         "logistic_regression": "Logistic Regression",
-        "mlp": "Neural Network (MLP)",
     }
     statuses = []
     for name, label in labels.items():
         if not model_available(name):
             missing = str(MODEL_PATHS[name].relative_to(ROOT))
-            if name == "mlp" and not MLP_SCALER.is_file():
-                missing += " + " + str(MLP_SCALER.relative_to(ROOT))
             statuses.append({"id": name, "name": label, "available": False, "ready": False, "error": "Required model artifact missing: " + missing})
             continue
         try:
@@ -77,7 +55,7 @@ def model_status() -> list[dict]:
     return statuses
 
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=3)
 def load_model(name: str):
     if name not in MODEL_PATHS:
         raise ValueError("Unknown model: " + name)
@@ -95,39 +73,13 @@ def load_model(name: str):
         model = CatBoostClassifier()
         model.load_model(str(path))
         return model
-    if name == "lightgbm":
-        import lightgbm as lgb
-        return lgb.Booster(model_file=str(path))
-    if name == "logistic_regression":
-        import joblib
-        return joblib.load(path)
-    if name == "mlp":
-        checkpoint = torch.load(path, map_location="cpu", weights_only=True)
-        model = HiggsMLP(28)
-        model.load_state_dict(checkpoint["model_state_dict"])
-        model.eval()
-        with np.load(MLP_SCALER) as z:
-            scaler = {"mean": z["mean"].astype(np.float32), "scale": z["scale"].astype(np.float32)}
-        return {"model": model, "scaler": scaler}
-    raise ValueError("Unsupported model: " + name)
+    raise ValueError("Unsupported or disabled model: " + name)
 
 
 def predict_probability(name: str, values: list[float]) -> float:
     frame = pd.DataFrame([values], columns=FEATURES, dtype=np.float32)
-    matrix = frame.to_numpy(dtype=np.float32)
     model = load_model(name)
-    if name in {"xgboost", "catboost", "logistic_regression"}:
-        probability = float(model.predict_proba(frame)[:, 1][0])
-    elif name == "lightgbm":
-        probability = float(model.predict(matrix)[0])
-    elif name == "mlp":
-        mean = model["scaler"]["mean"]
-        scale = np.where(model["scaler"]["scale"] == 0, 1.0, model["scaler"]["scale"])
-        scaled = (matrix - mean) / scale
-        with torch.no_grad():
-            probability = float(torch.sigmoid(model["model"](torch.from_numpy(scaled))).cpu().numpy()[0])
-    else:
-        raise ValueError("Unsupported model: " + name)
+    probability = float(model.predict_proba(frame)[:, 1][0])
     if not np.isfinite(probability):
         raise ValueError("Model returned a non-finite probability.")
     return float(np.clip(probability, 0.0, 1.0))
@@ -271,7 +223,7 @@ def sample():
 
 
 class PredictionRequest(BaseModel):
-    model: Literal["xgboost", "catboost", "lightgbm", "logistic_regression", "mlp"]
+    model: Literal["xgboost", "catboost", "logistic_regression"]
     features: list[float] = Field(min_length=28, max_length=28)
     threshold: float = Field(default=0.5, gt=0.0, lt=1.0)
 
