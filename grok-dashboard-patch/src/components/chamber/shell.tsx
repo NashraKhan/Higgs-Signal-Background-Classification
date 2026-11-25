@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Activity, Atom, Crosshair, Images, Layers } from "lucide-react";
+import { Activity, Atom, BookOpen, Crosshair, Images, Layers } from "lucide-react";
 import { Collider } from "@/components/chamber/collider";
+import { Explainer } from "@/components/chamber/explainer";
 import { Bench, Hall, Ledger, Measure, Wall } from "@/components/chamber/stages";
 import type { Stage, Tone } from "@/data/higgs";
 
@@ -35,6 +36,7 @@ const rooms: { id: Stage; label: string; icon: typeof Atom }[] = [
 
 export function Chamber() {
   const [stage, setStage] = useState<Stage>("hall");
+  const [showGuide, setShowGuide] = useState(false);
   const [burst, setBurst] = useState(0);
   const [tone, setTone] = useState<Tone>("signal");
   const [selectedModel, setSelectedModel] = useState<string>("xgboost");
@@ -66,7 +68,7 @@ export function Chamber() {
       const target = event.target;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
       const index = Number(event.key) - 1;
-      if (index >= 0 && index < rooms.length) setStage(rooms[index].id);
+      if (index >= 0 && index < rooms.length) { setStage(rooms[index].id); setShowGuide(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -135,7 +137,7 @@ export function Chamber() {
 
         <div className="flex-1 pb-28">
           {stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
-          {lastPrediction && stage === "hall" ? (
+          {!showGuide && stage === "hall" ? <div aria-hidden="true" className="h-[62vh] min-h-[380px]" /> : null}\n          {!showGuide && lastPrediction && stage === "hall" ? (
             <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
               <p className="kicker text-xs text-ion">
                 Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : lastPrediction.sample_type === "source_dataset_demo" ? "source-dataset demo event" : "synthetic demonstration event"} #{lastPrediction.index.toLocaleString()}
@@ -168,7 +170,7 @@ export function Chamber() {
               <p className="mt-2 break-all text-[11px] text-mist/70">Source: {lastPrediction.source}</p>
             </div>
           ) : null}
-          {stage !== "hall" ? (
+          {!showGuide && stage !== "hall" ? (
             <>
               {stage === "measure" ? <Measure /> : null}
               {stage === "bench" ? <Bench /> : null}
@@ -184,13 +186,13 @@ export function Chamber() {
           </div>
         ) : null}
 
-        <nav className="fixed inset-x-3 bottom-4 z-20 mx-auto max-w-xl" aria-label="Rooms">
+        <nav className="fixed inset-x-3 bottom-4 z-20 mx-auto max-w-2xl" aria-label="Rooms and guide">
           <div className="dock flex justify-between rounded-full px-2 py-2">
-            {rooms.map((room) => {
+            <button type="button" onClick={() => setShowGuide(true)} className={showGuide ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion" : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"} aria-current={showGuide ? "page" : undefined}>\n              <BookOpen className="size-4" aria-hidden="true" />\n              <span className="text-xs leading-none">Guide</span>\n            </button>\n            {rooms.map((room) => {
               const Icon = room.icon;
               const active = stage === room.id;
               return (
-                <button key={room.id} type="button" onClick={() => setStage(room.id)}
+                <button key={room.id} type="button" onClick={() => { setStage(room.id); setShowGuide(false); }}
                   className={active
                     ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion"
                     : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"}
