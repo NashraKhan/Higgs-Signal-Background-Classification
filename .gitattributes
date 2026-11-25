@@ -1,2 +1,2 @@
-# Preserve LightGBM's serialized tree-size offsets exactly. Git line-ending conversion breaks model loading on Windows.
-/lightgbm/benchmark_1m/models/*.txt -text
+# LightGBM model files are serialized as LF text; enforce LF checkout on every OS.
+lightgbm/benchmark_1m/models/*.txt text eol=lf
