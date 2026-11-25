@@ -9,7 +9,7 @@ PowerShell:
     python -m pip install -r higgs_inference/requirements.txt
     python -m uvicorn higgs_inference.app:app --host 127.0.0.1 --port 8000
 
-Check model availability: http://127.0.0.1:8000/health
+Check model readiness: http://127.0.0.1:8000/health. The endpoint now attempts to load each saved model and reports per-model readiness; API online does not mean every model is loadable.
 
 ## Event source priority
 
