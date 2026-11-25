@@ -21,7 +21,7 @@ type Prediction = {
   p_signal: number;
   confidence: number;
   actual_label: number | null;
-  sample_type: "held_out_test" | "source_dataset_demo";
+  sample_type: "held_out_test" | "source_dataset_demo" | "synthetic_demo";
   source: string;
 };
 
@@ -138,7 +138,7 @@ export function Chamber() {
           {lastPrediction && stage === "hall" ? (
             <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
               <p className="kicker text-xs text-ion">
-                Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : "source-dataset demo event"} #{lastPrediction.index.toLocaleString()}
+                Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : lastPrediction.sample_type === "source_dataset_demo" ? "source-dataset demo event" : "synthetic demonstration event"} #{lastPrediction.index.toLocaleString()}
               </p>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
