@@ -156,6 +156,51 @@ def read_test_split():
     )
 
 
+def read_source_dataset_sample():
+    """Fallback for a genuine model demo when only the original HIGGS.csv is available.
+
+    This is explicitly NOT a held-out test event. Only the first 5,000 rows are read
+    so the exhibition demo does not scan the full multi-gigabyte source file.
+    """
+    candidates = [
+        ROOT / "HIGGS.csv", ROOT / "higgs.csv",
+        ROOT / "data" / "HIGGS.csv", ROOT / "data" / "higgs.csv",
+    ]
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            frame = pd.read_csv(path, header=None, nrows=5000)
+            values = frame.apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float32)
+            if values.shape[1] != 29 or not np.isfinite(values).all():
+                frame = pd.read_csv(path, nrows=5000)
+                lower = {str(c).strip().lower(): c for c in frame.columns}
+                if all("feature_" + str(i) in lower for i in range(1, 29)) and "label" in lower:
+                    x = frame[[lower["feature_" + str(i)] for i in range(1, 29)]].to_numpy(dtype=np.float32)
+                    y = frame[lower["label"]].to_numpy(dtype=int)
+                else:
+                    continue
+            else:
+                first, last = values[:, 0], values[:, -1]
+                if set(np.unique(first)).issubset({0.0, 1.0}):
+                    y, x = first.astype(int), values[:, 1:]
+                elif set(np.unique(last)).issubset({0.0, 1.0}):
+                    x, y = values[:, :28], last.astype(int)
+                else:
+                    continue
+            if len(x) == 0 or x.shape[1] != 28 or not np.isfinite(x).all():
+                continue
+            index = random.randrange(len(x))
+            return index, x[index].astype(float).tolist(), int(y[index]), str(path)
+        except Exception:
+            continue
+    raise FileNotFoundError(
+        "No held-out test split or local HIGGS.csv source file was found. "
+        "For a held-out event, add X_test.csv/y_test.csv under lightgbm/benchmark_1m/data/. "
+        "As a demo fallback, place the original HIGGS.csv in the repository root or data/ folder."
+    )
+
+
 @lru_cache(maxsize=1)
 def load_test_split():
     x, y, source = read_test_split()
@@ -175,15 +220,23 @@ def health():
 def sample():
     try:
         x, y, source = load_test_split()
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        index = random.randrange(len(x))
+        return {
+            "index": index, "total_events": len(x), "sample_type": "held_out_test",
+            "features": x[index].astype(float).tolist(),
+            "actual_label": int(y[index]) if y is not None else None, "source": source,
+        }
+    except FileNotFoundError:
+        try:
+            index, features, actual_label, source = read_source_dataset_sample()
+            return {
+                "index": index, "total_events": 5000, "sample_type": "source_dataset_demo",
+                "features": features, "actual_label": actual_label, "source": source,
+            }
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    index = random.randrange(len(x))
-    return {
-        "index": index, "total_events": len(x), "features": x[index].astype(float).tolist(),
-        "actual_label": int(y[index]) if y is not None else None, "source": source,
-    }
 
 
 class PredictionRequest(BaseModel):
