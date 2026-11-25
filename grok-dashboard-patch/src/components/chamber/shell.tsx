@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Activity, Atom, Crosshair, Images, Layers } from "lucide-react";
+import { Activity, Atom, BookOpen, Crosshair, Images, Layers } from "lucide-react";
 import { Collider } from "@/components/chamber/collider";
+import { Explainer } from "@/components/chamber/explainer";
 import { Bench, Hall, Ledger, Measure, Wall } from "@/components/chamber/stages";
 import type { Stage, Tone } from "@/data/higgs";
 
@@ -8,18 +9,20 @@ const API_BASE = import.meta.env.VITE_HIGGS_API_URL ?? "http://127.0.0.1:8000";
 const MODEL_OPTIONS = [
   { id: "xgboost", label: "XGBoost · 5,000 rounds" },
   { id: "catboost", label: "CatBoost" },
-  { id: "lightgbm", label: "LightGBM" },
   { id: "logistic_regression", label: "Logistic Regression" },
-  { id: "mlp", label: "Neural Network (MLP)" },
 ] as const;
 
-type Prediction = {
-  index: number;
+type ModelPrediction = {
   model: string;
   class_name: "Signal" | "Background";
   prediction: 0 | 1;
   p_signal: number;
   confidence: number;
+};
+
+type Prediction = {
+  index: number;
+  modelResults: ModelPrediction[];
   actual_label: number | null;
   sample_type: "held_out_test" | "source_dataset_demo" | "synthetic_demo";
   source: string;
@@ -35,11 +38,12 @@ const rooms: { id: Stage; label: string; icon: typeof Atom }[] = [
 
 export function Chamber() {
   const [stage, setStage] = useState<Stage>("hall");
+  const [showGuide, setShowGuide] = useState(false);
   const [burst, setBurst] = useState(0);
   const [tone, setTone] = useState<Tone>("signal");
-  const [selectedModel, setSelectedModel] = useState<string>("xgboost");
   const [busy, setBusy] = useState(false);
   const [apiReady, setApiReady] = useState(false);
+  const [readyModels, setReadyModels] = useState<string[]>([]);
   const [apiError, setApiError] = useState("");
   const [lastPrediction, setLastPrediction] = useState<Prediction | null>(null);
 
@@ -50,23 +54,30 @@ export function Chamber() {
         return response.json();
       })
       .then((data) => {
+        const models = Array.isArray(data.models) ? data.models : [];
+        const ready = models
+          .filter((item: { id: string; ready?: boolean }) => item.ready === true)
+          .map((item: { id: string }) => item.id);
+        setReadyModels(ready);
         setApiReady(true);
-        const current = data.models?.find((item: { id: string; available: boolean }) => item.id === selectedModel);
-        if (current && !current.available) setApiError(current.id + " checkpoint is not available locally.");
-        else setApiError("");
+        setApiError(
+          ready.length === MODEL_OPTIONS.length
+            ? ""
+            : "Some inference models are not ready. Check the API health response before the demo."
+        );
       })
       .catch(() => {
         setApiReady(false);
         setApiError("Start the Python inference API on http://127.0.0.1:8000 before releasing an event.");
       });
-  }, [selectedModel]);
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
       const index = Number(event.key) - 1;
-      if (index >= 0 && index < rooms.length) setStage(rooms[index].id);
+      if (index >= 0 && index < rooms.length) { setStage(rooms[index].id); setShowGuide(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -79,22 +90,36 @@ export function Chamber() {
     try {
       const sampleResponse = await fetch(API_BASE + "/sample");
       const sample = await sampleResponse.json();
-      if (!sampleResponse.ok) throw new Error(sample.detail ?? "Could not load a held-out test event.");
+      if (!sampleResponse.ok) throw new Error(sample.detail ?? "Could not load a demo event.");
 
-      const predictionResponse = await fetch(API_BASE + "/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: selectedModel, features: sample.features, threshold: 0.5 }),
-      });
-      const result = await predictionResponse.json();
-      if (!predictionResponse.ok) throw new Error(result.detail ?? "Model inference failed.");
+      // Run every available model against the exact same 28-feature input.
+      const modelResults: ModelPrediction[] = [];
+      for (const model of MODEL_OPTIONS) {
+        const response = await fetch(API_BASE + "/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: model.id, features: sample.features, threshold: 0.5 }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(model.label + ": " + (result.detail ?? "Inference failed."));
+        modelResults.push({
+          model: result.model,
+          class_name: result.class_name,
+          prediction: result.prediction,
+          p_signal: result.p_signal,
+          confidence: result.confidence,
+        });
+      }
 
-      setTone(result.prediction === 1 ? "signal" : "background");
+      // The collider animation follows XGBoost; the result card shows every model.
+      setTone(modelResults[0].prediction === 1 ? "signal" : "background");
       setBurst((value) => value + 1);
       setLastPrediction({
-        index: sample.index, model: result.model, class_name: result.class_name,
-        prediction: result.prediction, p_signal: result.p_signal, confidence: result.confidence,
-        actual_label: sample.actual_label, sample_type: sample.sample_type ?? "held_out_test", source: sample.source,
+        index: sample.index,
+        modelResults,
+        actual_label: sample.actual_label,
+        sample_type: sample.sample_type ?? "held_out_test",
+        source: sample.source,
       });
       setApiReady(true);
     } catch (error) {
@@ -103,8 +128,6 @@ export function Chamber() {
       setBusy(false);
     }
   }
-
-  const selectedLabel = MODEL_OPTIONS.find((model) => model.id === selectedModel)?.label ?? selectedModel;
 
   return (
     <main className="relative min-h-dvh">
@@ -116,59 +139,73 @@ export function Chamber() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <span className={apiReady ? "text-xs text-ion" : "text-xs text-copper"}>
-              {apiReady ? "● INFERENCE API CONNECTED" : "● API NOT CONNECTED"}
+              {apiReady ? (readyModels.length > 0 ? "● API ONLINE · " + readyModels.length + "/" + MODEL_OPTIONS.length + " MODELS READY" : "● API ONLINE · READINESS NOT CHECKED") : "● API NOT CONNECTED"}
             </span>
-            <label className="text-xs text-mist">
-              Model{" "}
-              <select
-                value={selectedModel}
-                onChange={(event) => setSelectedModel(event.target.value)}
-                className="ml-1 rounded-full border border-line bg-void/90 px-3 py-2 text-cream"
-              >
-                {MODEL_OPTIONS.map((model) => (
-                  <option key={model.id} value={model.id}>{model.label}</option>
-                ))}
-              </select>
-            </label>
           </div>
         </header>
 
         <div className="flex-1 pb-28">
-          {stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
-          {lastPrediction && stage === "hall" ? (
-            <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
-              <p className="kicker text-xs text-ion">
-                Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : lastPrediction.sample_type === "source_dataset_demo" ? "source-dataset demo event" : "synthetic demonstration event"} #{lastPrediction.index.toLocaleString()}
+          {!showGuide && stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
+          {showGuide ? <Explainer /> : null}
+          {!showGuide && stage === "hall" ? <div aria-hidden="true" className="h-[62vh] min-h-[380px]" /> : null}
+          {!showGuide && lastPrediction && stage === "hall" ? (
+            <section className="relative z-10 mx-5 mb-5 max-w-3xl rounded-2xl border border-copper/30 bg-void/90 p-4 backdrop-blur md:mx-12">
+              <p className="kicker text-xs text-copper">
+                {lastPrediction.sample_type === "synthetic_demo"
+                  ? "SYNTHETIC INPUT · NOT A RECORDED HIGGS EVENT"
+                  : lastPrediction.sample_type === "held_out_test"
+                    ? "MODEL INFERENCE · HELD-OUT TEST EVENT"
+                    : "MODEL INFERENCE · SOURCE-DATASET DEMO EVENT"}{" "}
+                #{lastPrediction.index.toLocaleString()}
               </p>
-              <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-                <div>
-                  <p className="display text-4xl text-cream">{lastPrediction.class_name.toUpperCase()}</p>
-                  <p className="mt-1 text-xs text-mist">{selectedLabel} · 28 input features</p>
-                </div>
-                <div className="text-right">
-                  <p className="num text-3xl text-cream">{(lastPrediction.confidence * 100).toFixed(2)}%</p>
-                  <p className="text-xs text-mist">Confidence in predicted class</p>
-                </div>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <p className="text-mist">P(Signal) <strong className="ml-2 text-cream">{(lastPrediction.p_signal * 100).toFixed(2)}%</strong></p>
-                <p className="text-mist">P(Background) <strong className="ml-2 text-cream">{((1 - lastPrediction.p_signal) * 100).toFixed(2)}%</strong></p>
+              <h2 className="mt-2 text-lg font-semibold text-cream">Three-model inference comparison</h2>
+              <p className="mt-1 text-xs leading-5 text-mist">
+                All three saved models evaluated the same 28-feature input. Percentages below are each model's
+                estimated probability for its predicted class — they are not accuracy scores or a guarantee
+                that the prediction is correct.
+              </p>
+              {lastPrediction.sample_type === "synthetic_demo" ? (
+                <p className="mt-2 text-xs leading-5 text-copper">
+                  This input was generated from the saved feature ranges because no local event dataset was found.
+                  It is a pipeline demonstration, not a recorded collision, and has no ground-truth label.
+                </p>
+              ) : null}
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {lastPrediction.modelResults.map((item) => {
+                  const modelLabel = MODEL_OPTIONS.find((option) => option.id === item.model)?.label ?? item.model;
+                  return (
+                    <div key={item.model} className="rounded-xl border border-line bg-white/[0.035] p-3">
+                      <p className="text-xs font-medium leading-5 text-mist">{modelLabel}</p>
+                      <p className="display mt-2 text-xl text-cream">{item.class_name.toUpperCase()}</p>
+                      <p className="num mt-1 text-2xl text-cream">{(item.confidence * 100).toFixed(2)}%</p>
+                      <p className="text-[10px] leading-4 text-mist">Estimated probability for predicted class</p>
+                      <div className="mt-3 space-y-1 text-[11px] text-mist">
+                        <p className="flex justify-between gap-2">
+                          P(Signal)<strong className="text-cream">{(item.p_signal * 100).toFixed(2)}%</strong>
+                        </p>
+                        <p className="flex justify-between gap-2">
+                          P(Background)<strong className="text-cream">{((1 - item.p_signal) * 100).toFixed(2)}%</strong>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               {lastPrediction.actual_label !== null ? (
-                <p className="mt-3 text-sm text-mist">
-                  {lastPrediction.sample_type === "held_out_test" ? "Actual held-out label:" : "Source dataset label (not held-out):"} <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
-                  {" · "}
-                  <strong className={lastPrediction.actual_label === lastPrediction.prediction ? "text-ion" : "text-copper"}>
-                    {lastPrediction.actual_label === lastPrediction.prediction ? "Correct prediction" : "Different from actual label"}
-                  </strong>
+                <p className="mt-3 text-xs text-mist">
+                  Provided dataset label:{" "}
+                  <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
                 </p>
               ) : (
-                <p className="mt-3 text-xs text-mist">No ground-truth label was present in the local sample file.</p>
+                <p className="mt-3 text-xs text-mist">Ground-truth label: not available for this generated input.</p>
               )}
-              <p className="mt-2 break-all text-[11px] text-mist/70">Source: {lastPrediction.source}</p>
-            </div>
+              <p className="mt-2 break-all text-[10px] leading-4 text-mist/70">Input source: {lastPrediction.source}</p>
+              <p className="mt-2 text-[10px] leading-4 text-mist/70">
+                Models may disagree. These outputs describe this input only; they do not measure validation/test accuracy.
+              </p>
+            </section>
           ) : null}
-          {stage !== "hall" ? (
+          {!showGuide && stage !== "hall" ? (
             <>
               {stage === "measure" ? <Measure /> : null}
               {stage === "bench" ? <Bench /> : null}
@@ -184,13 +221,17 @@ export function Chamber() {
           </div>
         ) : null}
 
-        <nav className="fixed inset-x-3 bottom-4 z-20 mx-auto max-w-xl" aria-label="Rooms">
+        <nav className="fixed inset-x-3 bottom-4 z-20 mx-auto max-w-2xl" aria-label="Rooms and guide">
           <div className="dock flex justify-between rounded-full px-2 py-2">
+            <button type="button" onClick={() => setShowGuide(true)} className={showGuide ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion" : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"} aria-current={showGuide ? "page" : undefined}>
+              <BookOpen className="size-4" aria-hidden="true" />
+              <span className="text-xs leading-none">Guide</span>
+            </button>
             {rooms.map((room) => {
               const Icon = room.icon;
               const active = stage === room.id;
               return (
-                <button key={room.id} type="button" onClick={() => setStage(room.id)}
+                <button key={room.id} type="button" onClick={() => { setStage(room.id); setShowGuide(false); }}
                   className={active
                     ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion"
                     : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"}

@@ -9,7 +9,7 @@ PowerShell:
     python -m pip install -r higgs_inference/requirements.txt
     python -m uvicorn higgs_inference.app:app --host 127.0.0.1 --port 8000
 
-Check model availability: http://127.0.0.1:8000/health
+Check model readiness: http://127.0.0.1:8000/health. The endpoint now attempts to load each saved model and reports per-model readiness; API online does not mean every model is loadable.
 
 ## Event source priority
 
@@ -21,6 +21,8 @@ The API first looks for a genuine held-out test event:
 It checks the corresponding xgboost, catboost, neural_network, logistic_regression and root data folders too. X_test.csv must contain 28 feature columns; y_test.csv contains matching 0/1 labels. A combined higgs_test_150k.csv or test.csv with 28 features plus label is also supported.
 
 If no held-out split is present, the API can use the original HIGGS.csv from the repository root or data/ folder. It reads at most the first 5,000 rows and randomly selects one. The frontend explicitly labels this as a source-dataset demo event, not a held-out test event. Do not use this fallback to claim test-set evaluation.
+
+If neither real source exists, the API falls back to a clearly marked synthetic demonstration: it generates 28 independent values within the saved per-feature minimum/maximum ranges. This is not an event from the HIGGS dataset and has no ground-truth label. The frontend therefore does not display its predicted class or probability as an event result. It instead identifies the synthetic input and shows a separately labelled, recorded validation metric. Never use synthetic-demo output as evidence of model accuracy or physics classification.
 
 ## Saved model availability
 

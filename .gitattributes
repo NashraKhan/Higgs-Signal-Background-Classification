@@ -1,0 +1,2 @@
+# LightGBM model files are serialized as LF text; enforce LF checkout on every OS.
+lightgbm/benchmark_1m/models/*.txt text eol=lf
