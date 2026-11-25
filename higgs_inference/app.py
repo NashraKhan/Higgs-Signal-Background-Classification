@@ -73,6 +73,9 @@ def load_model(name: str):
         model = CatBoostClassifier()
         model.load_model(str(path))
         return model
+    if name == "logistic_regression":
+        import joblib
+        return joblib.load(path)
     raise ValueError("Unsupported or disabled model: " + name)
 
 
