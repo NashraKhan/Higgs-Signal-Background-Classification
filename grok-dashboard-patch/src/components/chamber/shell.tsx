@@ -102,7 +102,9 @@ export function Chamber() {
       const result = await predictionResponse.json();
       if (!predictionResponse.ok) throw new Error(result.detail ?? "Model inference failed.");
 
-      setTone(result.prediction === 1 ? "signal" : "background");
+      if (sample.sample_type !== "synthetic_demo") {
+        setTone(result.prediction === 1 ? "signal" : "background");
+      }
       setBurst((value) => value + 1);
       setLastPrediction({
         index: sample.index, model: result.model, class_name: result.class_name,
