@@ -152,24 +152,16 @@ export function Chamber() {
             <section className="relative z-10 mx-5 mb-5 max-w-3xl rounded-2xl border border-copper/30 bg-void/90 p-4 backdrop-blur md:mx-12">
               <p className="kicker text-xs text-copper">
                 {lastPrediction.sample_type === "synthetic_demo"
-                  ? "SYNTHETIC INPUT · NOT A RECORDED HIGGS EVENT"
+                  ? "GENERATED DEMO EVENT"
                   : lastPrediction.sample_type === "held_out_test"
-                    ? "MODEL INFERENCE · HELD-OUT TEST EVENT"
-                    : "MODEL INFERENCE · SOURCE-DATASET DEMO EVENT"}{" "}
-                #{lastPrediction.index.toLocaleString()}
+                    ? "HELD-OUT TEST EVENT"
+                    : "DATASET DEMO EVENT"}{" "}
+                · #{lastPrediction.index.toLocaleString()}
               </p>
-              <h2 className="mt-2 text-lg font-semibold text-cream">Three-model inference comparison</h2>
-              <p className="mt-1 text-xs leading-5 text-mist">
-                All three saved models evaluated the same 28-feature input. Percentages below are each model's
-                estimated probability for its predicted class — they are not accuracy scores or a guarantee
-                that the prediction is correct.
+              <h2 className="mt-2 text-lg font-semibold text-cream">Three-model readout</h2>
+              <p className="mt-1 text-xs text-mist">
+                Same 28 features · predicted class and model score
               </p>
-              {lastPrediction.sample_type === "synthetic_demo" ? (
-                <p className="mt-2 text-xs leading-5 text-copper">
-                  This input was generated from the saved feature ranges because no local event dataset was found.
-                  It is a pipeline demonstration, not a recorded collision, and has no ground-truth label.
-                </p>
-              ) : null}
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {lastPrediction.modelResults.map((item) => {
                   const modelLabel = MODEL_OPTIONS.find((option) => option.id === item.model)?.label ?? item.model;
@@ -178,7 +170,7 @@ export function Chamber() {
                       <p className="text-xs font-medium leading-5 text-mist">{modelLabel}</p>
                       <p className="display mt-2 text-xl text-cream">{item.class_name.toUpperCase()}</p>
                       <p className="num mt-1 text-2xl text-cream">{(item.confidence * 100).toFixed(2)}%</p>
-                      <p className="text-[10px] leading-4 text-mist">Estimated probability for predicted class</p>
+                      <p className="text-[10px] leading-4 text-mist">Predicted-class probability</p>
                       <div className="mt-3 space-y-1 text-[11px] text-mist">
                         <p className="flex justify-between gap-2">
                           P(Signal)<strong className="text-cream">{(item.p_signal * 100).toFixed(2)}%</strong>
@@ -193,16 +185,12 @@ export function Chamber() {
               </div>
               {lastPrediction.actual_label !== null ? (
                 <p className="mt-3 text-xs text-mist">
-                  Provided dataset label:{" "}
-                  <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
+                  Dataset label:{" "}
+                  <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal" : "Background"}</strong>
                 </p>
               ) : (
-                <p className="mt-3 text-xs text-mist">Ground-truth label: not available for this generated input.</p>
+                <p className="mt-3 text-[10px] text-mist">Synthetic input · no ground-truth label</p>
               )}
-              <p className="mt-2 break-all text-[10px] leading-4 text-mist/70">Input source: {lastPrediction.source}</p>
-              <p className="mt-2 text-[10px] leading-4 text-mist/70">
-                Models may disagree. These outputs describe this input only; they do not measure validation/test accuracy.
-              </p>
             </section>
           ) : null}
           {!showGuide && stage !== "hall" ? (
