@@ -22,6 +22,8 @@ It checks the corresponding xgboost, catboost, neural_network, logistic_regressi
 
 If no held-out split is present, the API can use the original HIGGS.csv from the repository root or data/ folder. It reads at most the first 5,000 rows and randomly selects one. The frontend explicitly labels this as a source-dataset demo event, not a held-out test event. Do not use this fallback to claim test-set evaluation.
 
+If neither real source exists, the API falls back to a clearly marked synthetic demonstration: it generates 28 independent values within the saved per-feature minimum/maximum ranges. This is not an event from the HIGGS dataset and has no ground-truth label. The frontend therefore does not display its predicted class or probability as an event result. It instead identifies the synthetic input and shows a separately labelled, recorded validation metric. Never use synthetic-demo output as evidence of model accuracy or physics classification.
+
 ## Saved model availability
 
 The API checks these existing artifacts:
