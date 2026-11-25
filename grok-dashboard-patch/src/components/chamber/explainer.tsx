@@ -121,10 +121,26 @@ export function Explainer() {
             <p className="mt-2 text-xs leading-6 text-mist">AUC measures how well a model ranks signal events above background across thresholds. 0.5 is roughly random ranking; 1.0 is perfect ranking. This is the best validation AUC reported for this project, not accuracy.</p>
             <div className="mt-5">
               <div className="mb-2 flex justify-between text-[10px] text-mist"><span>Random ranking · 0.50</span><span>Perfect · 1.00</span></div>
-              <div className="relative h-4 overflow-hidden rounded-full bg-white/10"><div className="absolute inset-y-0 left-0 w-full bg-white/5"/><div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{ width: "67.6%" }}/><div className="absolute inset-y-0 left-1/2 w-px bg-cream/70"/></div>
+              <div className="relative h-4 overflow-hidden rounded-full bg-white/10"><div className="absolute inset-y-0 left-0 w-full bg-white/5"/><div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{ width: "83.8%" }}/><div className="absolute inset-y-0 left-1/2 w-px bg-cream/70"/></div>
               <div className="mt-2 flex justify-between text-[10px] text-mist"><span>0</span><span>0.5</span><span>1.0</span></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-3xl border border-line bg-void/75 p-5 backdrop-blur md:p-7">
+        <p className="kicker text-xs tracking-widest text-ion">THE 1-MILLION-EVENT BENCHMARK</p>
+        <h2 className="display mt-2 text-2xl">Three separate groups.</h2>
+        <p className="mt-2 text-sm leading-6 text-mist">Models learn from the training group. Validation helps compare settings. The test group is kept separate for final evaluation.</p>
+        <div className="mt-5 flex h-5 overflow-hidden rounded-full">
+          <div className="w-[70%] bg-[#63c9ee]"/>
+          <div className="w-[15%] bg-[#e9b66f]"/>
+          <div className="w-[15%] bg-[#9d91e8]"/>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+          <p className="text-mist">Training<strong className="mt-1 block text-cream">700,000 · 70%</strong></p>
+          <p className="text-mist">Validation<strong className="mt-1 block text-cream">150,000 · 15%</strong></p>
+          <p className="text-mist">Test<strong className="mt-1 block text-cream">150,000 · 15%</strong></p>
         </div>
       </div>
 
