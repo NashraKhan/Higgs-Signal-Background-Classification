@@ -1,0 +1,2 @@
+# Preserve LightGBM's serialized tree-size offsets exactly. Git line-ending conversion breaks model loading on Windows.
+/lightgbm/benchmark_1m/models/*.txt -text
