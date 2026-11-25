@@ -136,8 +136,10 @@ export function Chamber() {
         </header>
 
         <div className="flex-1 pb-28">
-          {stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
-          {!showGuide && stage === "hall" ? <div aria-hidden="true" className="h-[62vh] min-h-[380px]" /> : null}\n          {!showGuide && lastPrediction && stage === "hall" ? (
+          {!showGuide && stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
+          {showGuide ? <Explainer /> : null}
+          {!showGuide && stage === "hall" ? <div aria-hidden="true" className="h-[62vh] min-h-[380px]" /> : null}
+          {!showGuide && lastPrediction && stage === "hall" ? (
             <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
               <p className="kicker text-xs text-ion">
                 Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : lastPrediction.sample_type === "source_dataset_demo" ? "source-dataset demo event" : "synthetic demonstration event"} #{lastPrediction.index.toLocaleString()}
@@ -188,7 +190,11 @@ export function Chamber() {
 
         <nav className="fixed inset-x-3 bottom-4 z-20 mx-auto max-w-2xl" aria-label="Rooms and guide">
           <div className="dock flex justify-between rounded-full px-2 py-2">
-            <button type="button" onClick={() => setShowGuide(true)} className={showGuide ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion" : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"} aria-current={showGuide ? "page" : undefined}>\n              <BookOpen className="size-4" aria-hidden="true" />\n              <span className="text-xs leading-none">Guide</span>\n            </button>\n            {rooms.map((room) => {
+            <button type="button" onClick={() => setShowGuide(true)} className={showGuide ? "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-ion" : "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-full text-mist"} aria-current={showGuide ? "page" : undefined}>
+              <BookOpen className="size-4" aria-hidden="true" />
+              <span className="text-xs leading-none">Guide</span>
+            </button>
+            {rooms.map((room) => {
               const Icon = room.icon;
               const active = stage === room.id;
               return (
