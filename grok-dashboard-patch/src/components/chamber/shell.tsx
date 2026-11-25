@@ -9,9 +9,7 @@ const API_BASE = import.meta.env.VITE_HIGGS_API_URL ?? "http://127.0.0.1:8000";
 const MODEL_OPTIONS = [
   { id: "xgboost", label: "XGBoost · 5,000 rounds" },
   { id: "catboost", label: "CatBoost" },
-  { id: "lightgbm", label: "LightGBM" },
   { id: "logistic_regression", label: "Logistic Regression" },
-  { id: "mlp", label: "Neural Network (MLP)" },
 ] as const;
 
 type Prediction = {
@@ -131,7 +129,7 @@ export function Chamber() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <span className={apiReady ? "text-xs text-ion" : "text-xs text-copper"}>
-              {apiReady ? (readyModels.length > 0 ? "● API ONLINE · " + readyModels.length + "/5 MODELS READY" : "● API ONLINE · READINESS NOT CHECKED") : "● API NOT CONNECTED"}
+              {apiReady ? (readyModels.length > 0 ? "● API ONLINE · " + readyModels.length + "/" + MODEL_OPTIONS.length + " MODELS READY" : "● API ONLINE · READINESS NOT CHECKED") : "● API NOT CONNECTED"}
             </span>
             <label className="text-xs text-mist">
               Model{" "}
