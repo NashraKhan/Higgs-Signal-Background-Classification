@@ -141,6 +141,32 @@ export function Explainer() {
         <div className="min-w-40 flex-1"><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{width:"83.8%"}}/></div><div className="mt-1 flex justify-between text-[9px] text-mist"><span>0 · low ranking ability</span><span>1 · perfect ranking</span></div></div>
         <p className="max-w-xs text-[10px] leading-4 text-mist">AUC describes ranking ability, not accuracy. A model prediction is not proof of a Higgs discovery.</p>
       </div>
+      <section className="mt-5 rounded-2xl border border-line bg-void/75 p-4">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div><p className="kicker text-[10px] tracking-[0.18em] text-ion">05 · RECORDED MODEL RESULTS</p><h2 className="display mt-1 text-xl">How well did they separate the two classes?</h2></div>
+          <span className="text-[10px] text-mist">28 features · 150,000 validation events each</span>
+        </div>
+        <p className="mt-2 max-w-3xl text-[11px] leading-5 text-mist">These are saved validation metrics from the project experiments. Accuracy is the share classified correctly; ROC-AUC measures how well a model ranks Signal above Background (1.0 is best). They are not live predictions.</p>
+        <div className="mt-4 space-y-3">
+          {[
+            {name:"Neural Network (MLP) · baseline",accuracy:"75.53%",auc:0.837502},
+            {name:"CatBoost",accuracy:"74.99%",auc:0.831869},
+            {name:"XGBoost · extended",accuracy:"74.93%",auc:0.831241},
+            {name:"LightGBM",accuracy:"74.55%",auc:0.827591},
+            {name:"Logistic Regression",accuracy:"64.11%",auc:0.683508},
+          ].map((item) => (
+            <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5">
+              <p className="truncate text-[11px] text-cream">{item.name}</p>
+              <div className="flex items-center gap-3 text-[10px] tabular-nums"><span className="text-mist">{item.accuracy} acc.</span><strong className="text-ion">{(item.auc*100).toFixed(2)} AUC</strong></div>
+              <div className="col-span-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{width:`${(item.auc*100).toFixed(2)}%`}} /></div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-xl border border-line/70 bg-white/[0.03] p-3">
+          <p className="text-[10px] font-semibold text-cream">Separate held-out test results (not mixed into the validation ranking)</p>
+          <p className="mt-1 text-[10px] leading-5 text-mist">CatBoost: 74.94% accuracy · 83.21% ROC-AUC. LightGBM: 74.43% · 82.76%. Logistic Regression: 64.26% · 68.54%.</p>
+        </div>
+      </section>
       <p className="mt-4 text-center text-[10px] text-mist/70">Collision animation is a simplified illustration, not a detector recording. “Signal” means Higgs-like; “Background” means ordinary collision events.</p>
     </section>
   );
