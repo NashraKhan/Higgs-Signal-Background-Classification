@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Atom, BrainCircuit, ChevronRight, CircleDot, GitBranch, Layers3, Network, ScanLine, Sparkles, Trees } from "lucide-react";
 
 const steps = [
-  { title: "A tiny collision", tag: "01 · THE IDEA", body: "Inside the Large Hadron Collider, tiny particles are accelerated to enormous speeds and made to collide. Most collisions produce ordinary particles. Very rarely, a collision may produce a Higgs boson.", note: "We cannot photograph a Higgs boson directly. We study the particles produced when it decays." },
-  { title: "The detector records clues", tag: "02 · THE MEASUREMENTS", body: "Huge detectors surround the collision point. They record tracks, energy and other clues left by the particles. Each event becomes a row of 28 numerical measurements in this project.", note: "Think of it like a 28-clue fingerprint for one collision." },
-  { title: "A model looks for patterns", tag: "03 · THE MACHINE LEARNING", body: "We train machine-learning models using examples labelled Signal or Background. They learn combinations of measurements that help distinguish the rare Higgs-related pattern from ordinary collision events.", note: "The model learns from labelled examples; it does not understand particle physics like a scientist." },
-  { title: "A probability, not a discovery", tag: "04 · THE RESULT", body: "For a new event, a model estimates how signal-like it is. A chosen threshold turns that score into Signal or Background. Scientists still need much more evidence and checks before claiming a discovery.", note: "This project demonstrates classification. A model prediction alone is not proof of a Higgs boson." },
+  { title: "A tiny collision", tag: "01 · THE IDEA", body: "Inside the Large Hadron Collider, tiny particles are accelerated to enormous speeds and made to collide. Most collisions produce ordinary particles. Very rarely, a collision may produce a Higgs boson.", note: "The Higgs boson is not seen directly here. Scientists look for the pattern of particles it can decay into." },
+  { title: "The prediction", tag: "02 · THE RESULT", body: "The model returns a score: how signal-like does this event look? At the chosen threshold, the event is labelled Signal or Background.", note: "A model prediction is a statistical estimate, not proof of a Higgs discovery." },
 ];
 
 const models = [
@@ -30,7 +28,7 @@ export function Explainer() {
         <p className="mt-4 max-w-2xl text-sm leading-7 text-mist md:text-base">A particle collision creates clues. Our models study those clues and estimate whether an event looks like a rare Higgs signal or ordinary background.</p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-5">
         <div className="rounded-3xl border border-line bg-void/75 p-5 backdrop-blur md:p-7">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="kicker text-xs tracking-widest text-ion">FROM COLLISION TO CLASSIFICATION</p>
@@ -78,21 +76,39 @@ export function Explainer() {
 
         <div className="space-y-5">
           <div className="rounded-3xl border border-line bg-void/75 p-5 backdrop-blur md:p-7">
-            <p className="kicker text-xs tracking-widest text-ion">WHY MACHINE LEARNING?</p>
-            <h2 className="display mt-3 text-3xl">28 clues are too many to judge by eye.</h2>
-            <p className="mt-3 text-sm leading-7 text-mist">A collision can produce complicated combinations of measurements. Machine learning finds patterns across many labelled examples and applies those patterns consistently to new rows.</p>
-            <div className="mt-6 grid grid-cols-4 items-center gap-2 text-center">
-              <div className="rounded-xl border border-line bg-white/[0.03] p-3"><Atom className="mx-auto size-5 text-ion"/><p className="mt-2 text-[10px] text-mist">Collision</p></div>
-              <ChevronRight className="mx-auto size-4 text-mist"/>
-              <div className="rounded-xl border border-line bg-white/[0.03] p-3"><CircleDot className="mx-auto size-5 text-ion"/><p className="mt-2 text-[10px] text-mist">28 values</p></div>
-              <ChevronRight className="mx-auto size-4 text-mist"/>
+            <p className="kicker text-xs tracking-widest text-ion">THE DATASET</p>
+            <h2 className="display mt-2 text-3xl">What each model gets to see.</h2>
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="num text-3xl text-ion">11M</p><p className="mt-1 text-xs text-mist">simulated collision events</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="num text-3xl text-ion">28</p><p className="mt-1 text-xs text-mist">features per event</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="num text-3xl text-ion">21 + 7</p><p className="mt-1 text-xs text-mist">low-level + high-level</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="num text-3xl text-ion">2</p><p className="mt-1 text-xs text-mist">classes: Signal / Background</p></div>
             </div>
-            <div className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ion/30 bg-ion/5 p-3">
-              <BrainCircuit className="size-6 text-ion"/>
-              <div><p className="text-xs font-semibold">Trained model</p><p className="text-[10px] text-mist">Learns patterns from examples</p></div>
-              <ChevronRight className="size-4 text-mist"/>
-              <div className="rounded-lg bg-ion/15 px-3 py-2 text-center"><p className="text-xs font-semibold text-ion">Signal?</p><p className="text-[10px] text-mist">or Background</p></div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-ion/30 bg-ion/[0.06] p-4">
+                <div className="flex items-center justify-between"><p className="text-sm font-semibold text-ion">21 LOW-LEVEL</p><span className="text-[10px] text-mist">21 / 28</span></div>
+                <div className="my-3 flex gap-1">{Array.from({length:21},(_,i)=><i key={i} className="h-3 flex-1 rounded-sm bg-[#63c9ee]"/>)}</div>
+                <p className="text-xs leading-6 text-mist">Raw / detector-level kinematic quantities.</p>
+              </div>
+              <div className="rounded-2xl border border-[#e9b66f]/30 bg-[#e9b66f]/[0.05] p-4">
+                <div className="flex items-center justify-between"><p className="text-sm font-semibold text-[#e9b66f]">7 HIGH-LEVEL</p><span className="text-[10px] text-mist">7 / 28</span></div>
+                <div className="my-3 flex gap-1">{Array.from({length:7},(_,i)=><i key={i} className="h-3 flex-1 rounded-sm bg-[#e9b66f]"/>)}</div>
+                <p className="text-xs leading-6 text-mist">Physics-derived quantities built from domain knowledge.</p>
+              </div>
             </div>
+            <div className="mt-4 rounded-xl border border-line bg-white/[0.03] p-3 text-xs text-mist">Feature sets explored: <strong className="text-cream">21 low-level</strong> · <strong className="text-cream">7 high-level</strong> · <strong className="text-cream">28 combined</strong>.</div>
+          </div>
+
+          <div className="rounded-3xl border border-line bg-void/75 p-5 backdrop-blur md:p-7">
+            <p className="kicker text-xs tracking-widest text-ion">PROJECT ROADMAP</p>
+            <h2 className="display mt-2 text-3xl">From dataset to model comparison.</h2>
+            <div className="mt-6 grid gap-3 md:grid-cols-4">
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="kicker text-[10px] text-ion">01 · HIGGS</p><p className="num mt-2 text-3xl">11M</p><p className="mt-1 text-xs text-mist">events in the full dataset</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="kicker text-[10px] text-ion">02 · SUBSAMPLE</p><p className="num mt-2 text-3xl">1M</p><p className="mt-1 text-xs text-mist">stratified sample · recorded seed</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="kicker text-[10px] text-ion">03 · SPLIT</p><p className="num mt-2 text-2xl">70 / 15 / 15</p><p className="mt-1 text-xs text-mist">train / validation / test before preprocessing</p></div>
+              <div className="rounded-2xl border border-line bg-white/[0.03] p-4"><p className="kicker text-[10px] text-ion">04 · FEATURE SETS</p><p className="num mt-2 text-2xl">21 · 7 · 28</p><p className="mt-1 text-xs text-mist">low · high · combined</p></div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-mist"><span className="rounded-full bg-ion/10 px-3 py-2 text-ion">21 low-level</span><span className="rounded-full bg-[#e9b66f]/10 px-3 py-2 text-[#e9b66f]">7 high-level</span><span className="rounded-full bg-white/10 px-3 py-2">28 combined</span><span className="ml-auto">Same task · five model approaches</span></div>
           </div>
 
           <div className="rounded-3xl border border-line bg-void/75 p-5 backdrop-blur md:p-7">
