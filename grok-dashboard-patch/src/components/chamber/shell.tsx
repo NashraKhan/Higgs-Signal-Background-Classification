@@ -42,6 +42,7 @@ export function Chamber() {
   const [selectedModel, setSelectedModel] = useState<string>("xgboost");
   const [busy, setBusy] = useState(false);
   const [apiReady, setApiReady] = useState(false);
+  const [readyModels, setReadyModels] = useState<string[]>([]);
   const [apiError, setApiError] = useState("");
   const [lastPrediction, setLastPrediction] = useState<Prediction | null>(null);
 
@@ -52,9 +53,12 @@ export function Chamber() {
         return response.json();
       })
       .then((data) => {
+        const models = Array.isArray(data.models) ? data.models : [];
+        const ready = models.filter((item: { id: string; ready?: boolean }) => item.ready === true).map((item: { id: string }) => item.id);
+        setReadyModels(ready);
         setApiReady(true);
-        const current = data.models?.find((item: { id: string; available: boolean }) => item.id === selectedModel);
-        if (current && !current.available) setApiError(current.id + " checkpoint is not available locally.");
+        const current = models.find((item: { id: string }) => item.id === selectedModel);
+        if (current && !current.ready) setApiError(current.error || (current.id + " is not ready for inference."));
         else setApiError("");
       })
       .catch(() => {
@@ -118,7 +122,7 @@ export function Chamber() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <span className={apiReady ? "text-xs text-ion" : "text-xs text-copper"}>
-              {apiReady ? "● INFERENCE API CONNECTED" : "● API NOT CONNECTED"}
+              {apiReady ? "● API ONLINE · " + readyModels.length + "/5 MODELS READY" : "● API NOT CONNECTED"}
             </span>
             <label className="text-xs text-mist">
               Model{" "}
