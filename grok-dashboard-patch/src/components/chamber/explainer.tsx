@@ -158,7 +158,14 @@ export function Explainer() {
             <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5">
               <p className="truncate text-[11px] text-cream">{item.name}</p>
               <div className="flex items-center gap-3 text-[10px] tabular-nums"><span className="text-mist">{item.accuracy} acc.</span><strong className="text-ion">{(item.auc*100).toFixed(2)} AUC</strong></div>
-              <div className="col-span-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{width:`${(item.auc*100).toFixed(2)}%`}} /></div>
+              <div className="col-span-2 grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2">
+                <span className="text-[9px] text-mist">AUC</span>
+                <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#477b91] to-[#70dcff]" style={{width:`${(item.auc*100).toFixed(2)}%`}} /></div>
+                <span className="num w-12 text-right text-[9px] text-ion">{item.auc.toFixed(3)}</span>
+                <span className="text-[9px] text-mist">ACC</span>
+                <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#e9b66f]" style={{width:item.accuracy}} /></div>
+                <span className="num w-12 text-right text-[9px] text-[#e9b66f]">{item.accuracy}</span>
+              </div>
             </div>
           ))}
         </div>
