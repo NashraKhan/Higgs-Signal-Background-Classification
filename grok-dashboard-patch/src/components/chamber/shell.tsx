@@ -21,6 +21,7 @@ type Prediction = {
   p_signal: number;
   confidence: number;
   actual_label: number | null;
+  sample_type: "held_out_test" | "source_dataset_demo";
   source: string;
 };
 
@@ -93,7 +94,7 @@ export function Chamber() {
       setLastPrediction({
         index: sample.index, model: result.model, class_name: result.class_name,
         prediction: result.prediction, p_signal: result.p_signal, confidence: result.confidence,
-        actual_label: sample.actual_label, source: sample.source,
+        actual_label: sample.actual_label, sample_type: sample.sample_type ?? "held_out_test", source: sample.source,
       });
       setApiReady(true);
     } catch (error) {
@@ -136,7 +137,9 @@ export function Chamber() {
           {stage === "hall" ? <Hall onRelease={release} tone={tone} /> : null}
           {lastPrediction && stage === "hall" ? (
             <div className="relative z-10 mx-5 mb-5 max-w-2xl rounded-2xl border border-ion/30 bg-void/85 p-4 backdrop-blur md:mx-12">
-              <p className="kicker text-xs text-ion">Live model inference · test event #{lastPrediction.index.toLocaleString()}</p>
+              <p className="kicker text-xs text-ion">
+                Live model inference · {lastPrediction.sample_type === "held_out_test" ? "held-out test event" : "source-dataset demo event"} #{lastPrediction.index.toLocaleString()}
+              </p>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="display text-4xl text-cream">{lastPrediction.class_name.toUpperCase()}</p>
@@ -153,7 +156,7 @@ export function Chamber() {
               </div>
               {lastPrediction.actual_label !== null ? (
                 <p className="mt-3 text-sm text-mist">
-                  Actual held-out label: <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
+                  {lastPrediction.sample_type === "held_out_test" ? "Actual held-out label:" : "Source dataset label (not held-out):"} <strong className="text-cream">{lastPrediction.actual_label === 1 ? "Signal (1)" : "Background (0)"}</strong>
                   {" · "}
                   <strong className={lastPrediction.actual_label === lastPrediction.prediction ? "text-ion" : "text-copper"}>
                     {lastPrediction.actual_label === lastPrediction.prediction ? "Correct prediction" : "Different from actual label"}
