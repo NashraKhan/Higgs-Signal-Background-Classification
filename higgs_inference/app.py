@@ -233,8 +233,25 @@ def sample():
                 "index": index, "total_events": 5000, "sample_type": "source_dataset_demo",
                 "features": features, "actual_label": actual_label, "source": source,
             }
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileNotFoundError:
+            # Explicitly synthetic fallback: real model inference on generated
+            # in-range feature values, NOT a real collision or evaluation event.
+            ranges_path = ROOT / "xgboost/benchmark_1m/results/feature_ranges.csv"
+            if not ranges_path.is_file():
+                raise HTTPException(status_code=404, detail="No dataset or feature_ranges.csv found.")
+            ranges = pd.read_csv(ranges_path, index_col=0)
+            ranges = ranges.loc[FEATURES]
+            low = ranges["Minimum"].to_numpy(dtype=np.float32)
+            high = ranges["Maximum"].to_numpy(dtype=np.float32)
+            values = np.random.default_rng().uniform(low, high).astype(np.float32)
+            return {
+                "index": random.randrange(1000000),
+                "total_events": 0,
+                "sample_type": "synthetic_demo",
+                "features": values.astype(float).tolist(),
+                "actual_label": None,
+                "source": str(ranges_path) + " (feature min/max only; generated input)",
+            }
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
